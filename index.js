@@ -116,7 +116,7 @@ module.exports = function createPlugin(app) {
     properties: {
       ip: {
         type: 'string',
-        default: '198.168.1.1',
+        default: '192.168.1.1',
         title: 'RUTX11 IP address',
       },
       port: {
