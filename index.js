@@ -1,6 +1,6 @@
 const modbus = require('modbus-stream');
 
-function getData(address, quantity, options) {  
+function getData(address, quantity, options) {
   return new Promise((resolve, reject) => {
     modbus.tcp.connect(options.port, options.ip, {
       debug: null,
@@ -9,15 +9,14 @@ function getData(address, quantity, options) {
         reject(err);
         return;
       }
-      connection.once('error', (err2) => {
-        reject(err);
-        return;
+      connection.once('error', (connErr) => {
+        reject(connErr);
       });
       connection.readHoldingRegisters({
         address,
         quantity,
-      }, (err, res) => {
-        if (err) {
+      }, (readErr, res) => {
+        if (readErr) {
           reject(err);
           return;
         }
@@ -37,7 +36,7 @@ module.exports = function createPlugin(app) {
   plugin.start = function start(options) {
     app.setPluginStatus('Initializing');
     plugin.fetchStatus(options);
-  }
+  };
   plugin.fetchStatus = function fetchStatus(options) {
     const values = [];
     getData(1, 38)
@@ -55,61 +54,62 @@ module.exports = function createPlugin(app) {
         app.setPluginStatus(`Connected to ${operator}, signal strength ${signalStrength}dBm`);
         return getData(119, 16);
       })
-    .then((data) => {
-      const connectionType = Buffer.concat(data.slice(0, 15)).toString();
-      values.push({
-        path: 'networking.lte.connectionText',
-        value: connectionType,
-      });
-      return getData(87, 16);
-    })
-    .then((data) => {
-      const activeSim = Buffer.concat(data.slice(0, 15)).toString();
-      switch (activeSim.slice(0, 4)) {
-        case 'sim1': {
-          return getData(185, 4)
+      .then((data) => {
+        const connectionType = Buffer.concat(data.slice(0, 15)).toString();
+        values.push({
+          path: 'networking.lte.connectionText',
+          value: connectionType,
+        });
+        return getData(87, 16);
+      })
+      .then((data) => {
+        const activeSim = Buffer.concat(data.slice(0, 15)).toString();
+        switch (activeSim.slice(0, 4)) {
+          case 'sim2': {
+            return getData(300, 4);
+          }
+          default: {
+            return getData(185, 4);
+          }
         }
-        case 'sim2': {
-          return getData(300, 4)
-        }
-      }
-    })
-    .then((data) => {
-      const tx = Buffer.concat([data[0], data[1]]).readUInt32BE();
-      const rx = Buffer.concat([data[2], data[3]]).readUInt32BE();
-      values.push({
-        path: 'networking.lte.usage',
-        value: tx + rx,
-      });
-    })
-    .then(() => {
-      app.handleMessage(plugin.id, {
-        context: `vessels.${app.selfId}`,
-        updates: [
-          {
-            source: {
-              label: plugin.id,
+      })
+      .then((data) => {
+        const tx = Buffer.concat([data[0], data[1]]).readUInt32BE();
+        const rx = Buffer.concat([data[2], data[3]]).readUInt32BE();
+        values.push({
+          path: 'networking.lte.usage',
+          value: tx + rx,
+        });
+      })
+      .then(() => {
+        app.handleMessage(plugin.id, {
+          context: `vessels.${app.selfId}`,
+          updates: [
+            {
+              source: {
+                label: plugin.id,
+              },
+              timestamp: (new Date().toISOString()),
+              values,
             },
-            timestamp: (new Date().toISOString()),
-            values,
-          },
-        ],
+          ],
+        });
+      })
+      .catch((err) => {
+        app.setPluginError(err.message);
       });
-    })
-    .catch((err) => {
-      app.setPluginError(err.message);
-    });
 
     timeout = setTimeout(() => {
       plugin.fetchStatus(options);
     }, options.interval * 1000);
-  }
+  };
+
   plugin.stop = function stop() {
     if (timeout) {
       clearTimeout(timeout);
       timeout = null;
     }
-  }
+  };
 
   plugin.schema = {
     type: 'object',
@@ -131,5 +131,4 @@ module.exports = function createPlugin(app) {
       },
     },
   };
-}
-
+};
