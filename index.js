@@ -131,4 +131,5 @@ module.exports = function createPlugin(app) {
       },
     },
   };
+  return plugin;
 };
