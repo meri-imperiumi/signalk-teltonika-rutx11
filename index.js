@@ -56,7 +56,7 @@ module.exports = function createPlugin(app) {
           path: 'networking.lte.radioQuality',
           value: radioQuality,
         });
-        const operator = Buffer.concat(data.slice(22)).toString();
+        const operator = Buffer.concat(data.slice(22)).toString().replace(/\0.*$/g, '');
         values.push({
           path: 'networking.lte.registerNetworkDisplay',
           value: operator,
@@ -65,7 +65,7 @@ module.exports = function createPlugin(app) {
         return getData(119, 16, options);
       })
       .then((data) => {
-        const connectionType = Buffer.concat(data.slice(0, 15)).toString();
+        const connectionType = Buffer.concat(data.slice(0, 15)).toString().replace(/\0.*$/g, '');
         values.push({
           path: 'networking.lte.connectionText',
           value: connectionType,
