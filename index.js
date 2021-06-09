@@ -39,7 +39,7 @@ module.exports = function createPlugin(app) {
   };
   plugin.fetchStatus = function fetchStatus(options) {
     const values = [];
-    getData(1, 38)
+    getData(1, 38, options)
       .then((data) => {
         const signalStrength = Buffer.concat(data.slice(2, 5)).readInt32BE();
         values.push({
@@ -52,7 +52,7 @@ module.exports = function createPlugin(app) {
           value: operator,
         });
         app.setPluginStatus(`Connected to ${operator}, signal strength ${signalStrength}dBm`);
-        return getData(119, 16);
+        return getData(119, 16, options);
       })
       .then((data) => {
         const connectionType = Buffer.concat(data.slice(0, 15)).toString();
@@ -60,16 +60,16 @@ module.exports = function createPlugin(app) {
           path: 'networking.lte.connectionText',
           value: connectionType,
         });
-        return getData(87, 16);
+        return getData(87, 16, options);
       })
       .then((data) => {
         const activeSim = Buffer.concat(data.slice(0, 15)).toString();
         switch (activeSim.slice(0, 4)) {
           case 'sim2': {
-            return getData(300, 4);
+            return getData(300, 4, options);
           }
           default: {
-            return getData(185, 4);
+            return getData(185, 4, options);
           }
         }
       })
