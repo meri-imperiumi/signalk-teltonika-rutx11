@@ -46,6 +46,16 @@ module.exports = function createPlugin(app) {
           path: 'networking.lte.rssi',
           value: signalStrength,
         });
+        const signalBars = Math.min(Math.floor((signalStrength + 100) / 8), 5);
+        values.push({
+          path: 'networking.lte.bars',
+          value: signalBars,
+        });
+        const radioQuality = Math.min((signalStrength + 100) / 8, 5) / 5;
+        values.push({
+          path: 'networking.lte.radioQuality',
+          value: radioQuality,
+        });
         const operator = Buffer.concat(data.slice(22)).toString();
         values.push({
           path: 'networking.lte.registerNetworkDisplay',
