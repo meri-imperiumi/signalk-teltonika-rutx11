@@ -1,0 +1,32 @@
+{
+  "name": "@meri-imperiumi/signalk-teltonika-rutx11",
+  "version": "0.1.0",
+  "description": "Signal K plugin that retrieves status from a Teltonika RUTX11 modem via Modbus",
+  "main": "index.js",
+  "scripts": {
+    "lint": "eslint .",
+    "test": "npm run lint"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/meri-imperiumi/signalk-teltonika-rutx11.git"
+  },
+  "homepage": "https://github.com/meri-imperiumi/signalk-teltonika-rutx11#readme",
+  "author": "Henri Bergius <henri.bergius@iki.fi>",
+  "license": "MIT",
+  "publishConfig": {
+    "access": "public"
+  },
+  "devDependencies": {
+    "eslint": "^7.28.0",
+    "eslint-config-airbnb-base": "^14.2.1",
+    "eslint-plugin-import": "^2.23.4"
+  },
+  "dependencies": {
+    "modbus-stream": "^0.46.0"
+  },
+  "keywords": [
+    "signalk-node-server-plugin",
+    "signalk-category-hardware"
+  ]
+}
