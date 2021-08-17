@@ -84,12 +84,18 @@ module.exports = function createPlugin(app) {
         }
       })
       .then((data) => {
-        const tx = Buffer.concat([data[0], data[1]]).readUInt32BE();
-        const rx = Buffer.concat([data[2], data[3]]).readUInt32BE();
-        values.push({
-          path: 'networking.lte.usage',
-          value: tx + rx,
-        });
+        const rx = Buffer.concat([data[0], data[1]]).readUInt32BE();
+        const tx = Buffer.concat([data[2], data[3]]).readUInt32BE();
+        values.push(
+          {
+          path: 'networking.lte.usage.tx',
+          value: tx,
+          },
+          {
+          path: 'networking.lte.usage.rx',
+          value: rx,
+          }
+        );
       })
       .then(() => {
         app.handleMessage(plugin.id, {
