@@ -41,6 +41,11 @@ module.exports = function createPlugin(app) {
     const values = [];
     getData(1, 38, options)
       .then((data) => {
+        const modemUptime = Buffer.concat(data.slice(0, 2)).readUInt32BE();
+        values.push({
+          path: 'networking.modem.uptime',
+          value: modemUptime,
+        });
         const signalStrength = Buffer.concat(data.slice(2, 5)).readInt32BE();
         values.push({
           path: 'networking.lte.rssi',
@@ -55,6 +60,11 @@ module.exports = function createPlugin(app) {
         values.push({
           path: 'networking.lte.radioQuality',
           value: radioQuality,
+        });
+        const modemTemperature = Buffer.concat(data.slice(4, 7)).readInt32BE() / 10;
+        values.push({
+          path: 'networking.modem.temperature',
+          value: modemTemperature,
         });
         const operator = Buffer.concat(data.slice(22)).toString().replace(/\0.*$/g, '');
         values.push({
