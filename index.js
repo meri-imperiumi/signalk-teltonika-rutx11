@@ -35,7 +35,20 @@ module.exports = function createPlugin(app) {
   let timeout = null;
   plugin.start = function start(options) {
     app.setPluginStatus('Initializing');
+    plugin.setMeta();
     plugin.fetchStatus(options);
+  };
+  plugin.setMeta = function setMeta() {
+    app.handleMessage('net-ais-plugin', {
+      context: 'vessels.self',
+      updates: [
+        {
+          meta: [
+              { path: 'networking.modem.temperature', value: { units: 'K' } },
+          ]
+        }
+      ]
+    })
   };
   plugin.fetchStatus = function fetchStatus(options) {
     const values = [];
@@ -61,7 +74,7 @@ module.exports = function createPlugin(app) {
           path: 'networking.lte.radioQuality',
           value: radioQuality,
         });
-        const modemTemperature = Buffer.concat(data.slice(4, 7)).readInt32BE() / 10;
+        const modemTemperature = Buffer.concat(data.slice(4, 7)).readInt32BE() / 10 + 273.15;
         values.push({
           path: 'networking.modem.temperature',
           value: modemTemperature,
