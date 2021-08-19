@@ -39,8 +39,8 @@ module.exports = function createPlugin(app) {
     plugin.fetchStatus(options);
   };
   plugin.setMeta = function setMeta() {
-    app.handleMessage('net-ais-plugin', {
-      context: 'vessels.self',
+    app.handleMessage(plugin.id, {
+      context: `vessels.${app.selfId}`,
       updates: [
         {
           meta: [
