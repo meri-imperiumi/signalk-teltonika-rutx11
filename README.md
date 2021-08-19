@@ -5,6 +5,10 @@ This plugin makes status information from your [RUTX11](https://teltonika-networ
 
 The data model is roughly equivalent to [signalk-netgear-lte-status](https://www.npmjs.com/package/signalk-netgear-lte-status).
 
+## Supported modems:
+
+* RUT240, RUT360, RUT950, RUT955, RUTX9, RUTX11 and RUTX14 
+
 ## Usage
 
 * Install this plugin to Signal K
