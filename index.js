@@ -29,8 +29,8 @@ function getData(address, quantity, options) {
 module.exports = function createPlugin(app) {
   const plugin = {};
   plugin.id = 'signalk-teltonika-rutx11';
-  plugin.name = 'Teltonika RUTX11 status';
-  plugin.description = 'Plugin that retrieves status from a Teltonika RUTX11 modem via Modbus';
+  plugin.name = 'Teltonika Modem Modbus';
+  plugin.description = 'Plugin that retrieves status from a Teltonika RUT modem via Modbus';
 
   let timeout = null;
   plugin.start = function start(options) {
@@ -89,7 +89,11 @@ module.exports = function createPlugin(app) {
             return getData(300, 4, options);
           }
           default: {
-            return getData(185, 4, options);
+            if (options.RUT240) {
+              return getData(135, 4, options);  
+            } else {
+              return getData(185, 4, options);
+            }
           }
         }
       })
@@ -139,16 +143,22 @@ module.exports = function createPlugin(app) {
 
   plugin.schema = {
     type: 'object',
+    description: 'For Teltonika RUT240, 360, 950, 955, X9, X11, X14 modems',
     properties: {
+      RUT240: {
+        type: 'boolean',
+        title: 'Select only in case using RUT240',
+        default: false
+      },
       ip: {
         type: 'string',
         default: '192.168.1.1',
-        title: 'RUTX11 IP address',
+        title: 'Modem IP address',
       },
       port: {
         type: 'integer',
         default: 502,
-        title: 'RUTX11 Modbus port (note: Modbus must be enabled on the router)',
+        title: 'Modem Modbus port (note: Modbus must be enabled on the router)',
       },
       interval: {
         type: 'integer',
