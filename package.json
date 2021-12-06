@@ -18,7 +18,7 @@
     "access": "public"
   },
   "devDependencies": {
-    "eslint": "^7.28.0",
+    "eslint": "^8.4.0",
     "eslint-config-airbnb-base": "^14.2.1",
     "eslint-plugin-import": "^2.23.4"
   },
