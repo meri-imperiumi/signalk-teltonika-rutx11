@@ -1,7 +1,7 @@
-Teltonika RUTX11 plugin for Signal K
-====================================
+Teltonika RUT modem plugin for Signal K
+=======================================
 
-This plugin makes status information from your [RUTX11](https://teltonika-networks.com/product/rutx11/) boat router available to Signal K.
+This plugin makes status information from your Teltonika RUT (for example [RUTX11](https://teltonika-networks.com/product/rutx11/)) boat router available to Signal K.
 
 The data model is roughly equivalent to [signalk-netgear-lte-status](https://www.npmjs.com/package/signalk-netgear-lte-status).
 
