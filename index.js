@@ -44,11 +44,11 @@ module.exports = function createPlugin(app) {
       updates: [
         {
           meta: [
-              { path: 'networking.modem.temperature', value: { units: 'K' } },
-          ]
-        }
-      ]
-    })
+            { path: 'networking.modem.temperature', value: { units: 'K' } },
+          ],
+        },
+      ],
+    });
   };
   plugin.fetchStatus = function fetchStatus(options) {
     const values = [];
@@ -103,10 +103,9 @@ module.exports = function createPlugin(app) {
           }
           default: {
             if (options.RUT240) {
-              return getData(135, 4, options);  
-            } else {
-              return getData(185, 4, options);
+              return getData(135, 4, options);
             }
+            return getData(185, 4, options);
           }
         }
       })
@@ -115,13 +114,13 @@ module.exports = function createPlugin(app) {
         const tx = Buffer.concat([data[2], data[3]]).readUInt32BE();
         values.push(
           {
-          path: 'networking.lte.usage.tx',
-          value: tx,
+            path: 'networking.lte.usage.tx',
+            value: tx,
           },
           {
-          path: 'networking.lte.usage.rx',
-          value: rx,
-          }
+            path: 'networking.lte.usage.rx',
+            value: rx,
+          },
         );
       })
       .then(() => {
@@ -161,7 +160,7 @@ module.exports = function createPlugin(app) {
       RUT240: {
         type: 'boolean',
         title: 'Select only in case using RUT240',
-        default: false
+        default: false,
       },
       ip: {
         type: 'string',
