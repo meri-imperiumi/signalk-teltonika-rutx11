@@ -93,6 +93,53 @@ module.exports = function createPlugin(app) {
           path: 'networking.lte.connectionText',
           value: connectionType,
         });
+        return getData(143, 4, options);
+      })
+      .then((data) => {
+        const modemLat = Buffer.concat(data.slice(0, 2)).readFloatLE();
+        const modemLon = Buffer.concat(data.slice(2, 4)).readFloatLE();
+
+        values.push({
+          path: 'networking.modem.gps.lat',
+          value: modemLat,
+        });
+        values.push({
+          path: 'networking.modem.gps.lon',
+          value: modemLon,
+        });
+
+	if (options.gps) {
+          values.push({
+            path: 'navigation.position',
+            value: {
+              latitude: modemLat,
+              longitude: modemLon,
+            }
+          });
+        }
+        return getData(179, 4, options);
+      })
+      .then((data) => {
+        
+        const modemSpeed = Buffer.concat(data.slice(0, 2)).readInt32BE();
+
+        values.push({
+          path: 'networking.modem.gps.sog',
+          value: modemSpeed,
+        });
+
+        if (options.gps) {
+          values.push({
+            path: 'navigation.speedOverGround',
+            value: modemSpeed,
+          });
+        }
+        
+        const modemSats = Buffer.concat(data.slice(2, 4)).readUInt32BE();
+        values.push({
+          path: 'networking.modem.gps.satCount',
+          value: modemSats,
+        });
         return getData(87, 16, options);
       })
       .then((data) => {
@@ -162,6 +209,11 @@ module.exports = function createPlugin(app) {
         title: 'Select only in case using RUT240',
         default: false,
       },
+      gps: {
+        type: 'boolean',
+        title: 'Publish modem GPS data as navigation.position and navigation.speedOverGround',
+        default: false,
+      },
       ip: {
         type: 'string',
         default: '192.168.1.1',
@@ -181,3 +233,4 @@ module.exports = function createPlugin(app) {
   };
   return plugin;
 };
+
