@@ -96,7 +96,6 @@ module.exports = function createPlugin(app) {
         return getData(143, 4, options);
       })
       .then((data) => {
-
         const modemLat = Buffer.concat(data.slice(0, 2)).readFloatLE();
         const modemLon = Buffer.concat(data.slice(2, 4)).readFloatLE();
         values.push({
@@ -104,13 +103,12 @@ module.exports = function createPlugin(app) {
           value: {
             latitude: modemLat,
             longitude: modemLon,
-          }
+          },
         });
 
         return getData(179, 4, options);
       })
       .then((data) => {
-
         const modemSpeed = Buffer.concat(data.slice(0, 2)).readInt32BE();
         values.push({
           path: 'navigation.speedOverGround',
@@ -211,4 +209,3 @@ module.exports = function createPlugin(app) {
   };
   return plugin;
 };
-
