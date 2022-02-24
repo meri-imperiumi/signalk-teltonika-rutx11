@@ -93,6 +93,34 @@ module.exports = function createPlugin(app) {
           path: 'networking.lte.connectionText',
           value: connectionType,
         });
+        return getData(143, 4, options);
+      })
+      .then((data) => {
+        const modemLat = Buffer.concat(data.slice(0, 2)).readFloatLE();
+        const modemLon = Buffer.concat(data.slice(2, 4)).readFloatLE();
+        values.push({
+          path: 'navigation.position',
+          value: {
+            latitude: modemLat,
+            longitude: modemLon,
+          },
+        });
+
+        return getData(179, 4, options);
+      })
+      .then((data) => {
+        const modemSpeed = Buffer.concat(data.slice(0, 2)).readInt32BE();
+        values.push({
+          path: 'navigation.speedOverGround',
+          value: modemSpeed,
+        });
+
+        const modemSats = Buffer.concat(data.slice(2, 4)).readUInt32BE();
+        values.push({
+          path: 'navigation.gnss.satellites',
+          value: modemSats,
+        });
+
         return getData(87, 16, options);
       })
       .then((data) => {
