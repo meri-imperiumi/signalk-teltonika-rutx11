@@ -187,7 +187,7 @@ module.exports = function createPlugin(app) {
     properties: {
       RUT240: {
         type: 'boolean',
-        title: 'Select only in case using RUT240',
+        title: 'Select only in case using RUT240 with older firmware than 7.x',
         default: false,
       },
       ip: {
