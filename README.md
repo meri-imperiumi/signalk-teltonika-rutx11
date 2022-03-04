@@ -14,3 +14,10 @@ The data model is roughly equivalent to [signalk-netgear-lte-status](https://www
 * Install this plugin to Signal K
 * [Enable Modbus](https://wiki.teltonika-networks.com/view/RUTX11_Monitoring_via_Modbus) in your RUTX11
 * Enable the plugin and set the Modbus connection details you configured for the router
+
+## Changes
+
+* 0.4.0 (March 4th 2022)
+  - Add support for using the Teltonika modem as a GPS source for Signal K
+* 0.3.0 (February 4th 2022)
+  - Add support for other Teltonika modems apart from X11
