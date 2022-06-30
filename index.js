@@ -96,8 +96,8 @@ module.exports = function createPlugin(app) {
         return getData(143, 4, options);
       })
       .then((data) => {
-        const modemLat = Buffer.concat(data.slice(0, 2)).readFloatLE();
-        const modemLon = Buffer.concat(data.slice(2, 4)).readFloatLE();
+        const modemLat = Buffer.concat(data.slice(0, 2)).readFloatBE();
+        const modemLon = Buffer.concat(data.slice(2, 4)).readFloatBE();
         values.push({
           path: 'navigation.position',
           value: {
