@@ -179,6 +179,7 @@ module.exports = function createPlugin(app) {
           value: modemSats,
         });
         sendValues(values);
+        return Promise.resolve();
       })
       .catch((err) => {
         if (!err) {
