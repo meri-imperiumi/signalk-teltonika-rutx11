@@ -51,10 +51,24 @@ module.exports = function createPlugin(app) {
     });
   };
   plugin.fetchStatus = function fetchStatus(options) {
-    const values = [];
+    function sendValues(values) {
+      app.handleMessage(plugin.id, {
+        context: `vessels.${app.selfId}`,
+        updates: [
+          {
+            source: {
+              label: plugin.id,
+            },
+            timestamp: (new Date().toISOString()),
+            values,
+          },
+        ],
+      });
+    }
     getData(1, 38, options)
       .then((data) => {
         const modemUptime = Buffer.concat(data.slice(0, 2)).readUInt32BE();
+        const values = [];
         values.push({
           path: 'networking.modem.uptime',
           value: modemUptime,
@@ -85,19 +99,23 @@ module.exports = function createPlugin(app) {
           value: operator,
         });
         app.setPluginStatus(`Connected to ${operator}, signal strength ${signalStrength}dBm`);
+        sendValues(values);
         return getData(119, 16, options);
       })
       .then((data) => {
         const connectionType = Buffer.concat(data.slice(0, 15)).toString().replace(/\0.*$/g, '');
+        const values = [];
         values.push({
           path: 'networking.lte.connectionText',
           value: connectionType,
         });
+        sendValues(values);
         return getData(143, 4, options);
       })
       .then((data) => {
         const modemLat = Buffer.concat(data.slice(0, 2)).readFloatLE();
         const modemLon = Buffer.concat(data.slice(2, 4)).readFloatLE();
+        const values = [];
         values.push({
           path: 'navigation.position',
           value: {
@@ -105,22 +123,22 @@ module.exports = function createPlugin(app) {
             longitude: modemLon,
           },
         });
-
+        sendValues(values);
         return getData(179, 4, options);
       })
       .then((data) => {
         const modemSpeed = Buffer.concat(data.slice(0, 2)).readInt32BE();
+        const values = [];
         values.push({
           path: 'navigation.speedOverGround',
           value: modemSpeed,
         });
-
         const modemSats = Buffer.concat(data.slice(2, 4)).readUInt32BE();
         values.push({
           path: 'navigation.gnss.satellites',
           value: modemSats,
         });
-
+        sendValues(values);
         return getData(87, 16, options);
       })
       .then((data) => {
@@ -140,6 +158,7 @@ module.exports = function createPlugin(app) {
       .then((data) => {
         const rx = Buffer.concat([data[0], data[1]]).readUInt32BE();
         const tx = Buffer.concat([data[2], data[3]]).readUInt32BE();
+        const values = [];
         values.push(
           {
             path: 'networking.lte.usage.tx',
@@ -150,20 +169,7 @@ module.exports = function createPlugin(app) {
             value: rx,
           },
         );
-      })
-      .then(() => {
-        app.handleMessage(plugin.id, {
-          context: `vessels.${app.selfId}`,
-          updates: [
-            {
-              source: {
-                label: plugin.id,
-              },
-              timestamp: (new Date().toISOString()),
-              values,
-            },
-          ],
-        });
+        sendValues(values);
       })
       .catch((err) => {
         if (!err) {
