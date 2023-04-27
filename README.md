@@ -17,6 +17,9 @@ The data model is roughly equivalent to [signalk-netgear-lte-status](https://www
 
 ## Changes
 
+* 0.5.0 (April 27th 2023)
+  - Improved error handling in case some parts of the ModBus communication fail
+  - We no longer try to get GPS position for RUT240 devices
 * 0.4.0 (March 4th 2022)
   - Add support for using the Teltonika modem as a GPS source for Signal K
 * 0.3.0 (February 4th 2022)
