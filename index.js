@@ -166,6 +166,10 @@ module.exports = function createPlugin(app) {
         });
       })
       .catch((err) => {
+        if (!err) {
+          app.setPluginError('Unknown error');
+          return;
+        }
         app.setPluginError(err.message);
       });
 
