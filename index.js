@@ -67,6 +67,9 @@ module.exports = function createPlugin(app) {
     }
     getData(1, 38, options)
       .then((data) => {
+        if (!data) {
+          return Promise.resolve();
+        }
         const modemUptime = Buffer.concat(data.slice(0, 2)).readUInt32BE();
         const values = [];
         values.push({
@@ -103,6 +106,9 @@ module.exports = function createPlugin(app) {
         return getData(119, 16, options);
       })
       .then((data) => {
+        if (!data) {
+          return Promise.resolve();
+        }
         const connectionType = Buffer.concat(data.slice(0, 15)).toString().replace(/\0.*$/g, '');
         const values = [];
         values.push({
@@ -113,6 +119,9 @@ module.exports = function createPlugin(app) {
         return getData(87, 16, options);
       })
       .then((data) => {
+        if (!data) {
+          return Promise.resolve();
+        }
         const activeSim = Buffer.concat(data.slice(0, 15)).toString();
         switch (activeSim.slice(0, 4)) {
           case 'sim2': {
@@ -127,6 +136,9 @@ module.exports = function createPlugin(app) {
         }
       })
       .then((data) => {
+        if (!data) {
+          return Promise.resolve();
+        }
         const rx = Buffer.concat([data[0], data[1]]).readUInt32BE();
         const tx = Buffer.concat([data[2], data[3]]).readUInt32BE();
         const values = [];
@@ -144,10 +156,13 @@ module.exports = function createPlugin(app) {
         if (options.RUT240) {
           return Promise.resolve();
         }
+        if (!options.enable_gps) {
+          return Promise.resolve();
+        }
         return getData(143, 4, options);
       })
       .then((data) => {
-        if (options.RUT240) {
+        if (!data) {
           return Promise.resolve();
         }
         const modemLat = options.GPSBE
@@ -168,7 +183,7 @@ module.exports = function createPlugin(app) {
         return getData(179, 4, options);
       })
       .then((data) => {
-        if (options.RUT240) {
+        if (!data) {
           return Promise.resolve();
         }
         const modemSpeed = Buffer.concat(data.slice(0, 2)).readInt32BE();
@@ -213,6 +228,11 @@ module.exports = function createPlugin(app) {
         type: 'boolean',
         title: 'Select only in case using RUT240 with older firmware than 7.x',
         default: false,
+      },
+      enable_gps: {
+        type: 'boolean',
+        title: 'Get GPS position from the RUT',
+        default: true,
       },
       GPSBE: {
         type: 'boolean',
