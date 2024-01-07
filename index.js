@@ -150,8 +150,12 @@ module.exports = function createPlugin(app) {
         if (options.RUT240) {
           return Promise.resolve();
         }
-        const modemLat = Buffer.concat(data.slice(0, 2)).readFloatLE();
-        const modemLon = Buffer.concat(data.slice(2, 4)).readFloatLE();
+        const modemLat = options.GPSBE
+          ? Buffer.concat(data.slice(0, 2)).readFloatBE()
+          : Buffer.concat(data.slice(0, 2)).readFloatLE();
+        const modemLon = options.GPSBE
+          ? Buffer.concat(data.slice(2, 4)).readFloatBE()
+          : Buffer.concat(data.slice(2, 4)).readFloatLE();
         const values = [];
         values.push({
           path: 'navigation.position',
@@ -208,6 +212,11 @@ module.exports = function createPlugin(app) {
       RUT240: {
         type: 'boolean',
         title: 'Select only in case using RUT240 with older firmware than 7.x',
+        default: false,
+      },
+      GPSBE: {
+        type: 'boolean',
+        title: 'Select only in case GPS data is big endian (usualy identified by unexpected values for longitude and latidue).',
         default: false,
       },
       ip: {
