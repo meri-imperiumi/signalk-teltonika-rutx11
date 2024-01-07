@@ -216,7 +216,7 @@ module.exports = function createPlugin(app) {
       },
       GPSBE: {
         type: 'boolean',
-        title: 'Select only in case GPS data is big endian (usualy identified by unexpected values for longitude and latidue).',
+        title: 'Select only in case GPS data is big endian (usualy identified by unexpected values for longitude and latitude).',
         default: false,
       },
       ip: {
