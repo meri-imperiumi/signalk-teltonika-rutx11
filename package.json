@@ -1,6 +1,6 @@
 {
   "name": "@meri-imperiumi/signalk-teltonika-rutx11",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "description": "Signal K plugin that retrieves status from a Teltonika RUT modem via Modbus",
   "main": "index.js",
   "scripts": {

@@ -17,8 +17,9 @@ The data model is roughly equivalent to [signalk-netgear-lte-status](https://www
 
 ## Changes
 
-* 0.5.1 (January XX 2024)
-  - GPS data is send by some RUTX as big endian, provide a config for that
+* 0.6.0 (January 7th 2024)
+  - Make it possible to enable/disable getting GPS position from the RUT
+  - GPS data is sent by some RUT devices as big endian, provide a config for that
     (https://github.com/meri-imperiumi/signalk-teltonika-rutx11/issues/90)
 * 0.5.0 (April 27th 2023)
   - Improved error handling in case some parts of the ModBus communication fail
