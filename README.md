@@ -12,7 +12,8 @@ The data model is roughly equivalent to [signalk-netgear-lte-status](https://www
 ## Usage
 
 * Install this plugin to Signal K
-* [Enable Modbus](https://wiki.teltonika-networks.com/view/RUTX11_Monitoring_via_Modbus) in your RUTX11
+* [Enable Modbus TCP Server](https://wiki.teltonika-networks.com/view/RUTX11_Monitoring_via_Modbus) in your RUTxxx device
+  -   Note: set "connection timeout =  60  and switch OFF "keep persistent connection"
 * Enable the plugin and set the Modbus connection details you configured for the router
 
 ## Changes
