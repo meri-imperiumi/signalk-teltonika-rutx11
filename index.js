@@ -17,7 +17,7 @@ function getData(address, quantity, options) {
         quantity,
       }, (readErr, res) => {
         if (readErr) {
-          reject(err);
+          reject(readErr);
           return;
         }
         resolve(res.response.data);
