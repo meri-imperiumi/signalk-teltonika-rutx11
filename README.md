@@ -18,6 +18,8 @@ The data model is roughly equivalent to [signalk-netgear-lte-status](https://www
 
 ## Changes
 
+* 0.6.1 (November 28th 2025)
+  - Correct error message is now passed out on read errors
 * 0.6.0 (January 7th 2024)
   - Make it possible to enable/disable getting GPS position from the RUT
   - GPS data is sent by some RUT devices as big endian, provide a config for that
