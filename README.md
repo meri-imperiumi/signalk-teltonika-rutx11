@@ -18,6 +18,8 @@ The data model is roughly equivalent to [signalk-netgear-lte-status](https://www
 
 ## Changes
 
+* 0.6.2 (June 16th 2026)
+  - Added icon for Signal K app store
 * 0.6.1 (November 28th 2025)
   - Correct error message is now passed out on read errors
 * 0.6.0 (January 7th 2024)
