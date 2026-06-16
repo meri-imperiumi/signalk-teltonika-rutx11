@@ -28,5 +28,9 @@
   "keywords": [
     "signalk-node-server-plugin",
     "signalk-category-hardware"
-  ]
+  ],
+  "signalk": {
+    "appIcon": "doc/appicon.png",
+    "displayName": "Teltonika RUT Modem Integration"
+  }
 }
