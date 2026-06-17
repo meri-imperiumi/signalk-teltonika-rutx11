@@ -18,18 +18,4 @@ The data model is roughly equivalent to [signalk-netgear-lte-status](https://www
 
 ## Changes
 
-* 0.6.2 (June 16th 2026)
-  - Added icon for Signal K app store
-* 0.6.1 (November 28th 2025)
-  - Correct error message is now passed out on read errors
-* 0.6.0 (January 7th 2024)
-  - Make it possible to enable/disable getting GPS position from the RUT
-  - GPS data is sent by some RUT devices as big endian, provide a config for that
-    (https://github.com/meri-imperiumi/signalk-teltonika-rutx11/issues/90)
-* 0.5.0 (April 27th 2023)
-  - Improved error handling in case some parts of the ModBus communication fail
-  - We no longer try to get GPS position for RUT240 devices
-* 0.4.0 (March 4th 2022)
-  - Add support for using the Teltonika modem as a GPS source for Signal K
-* 0.3.0 (February 4th 2022)
-  - Add support for other Teltonika modems apart from X11
+See [Changelog](CHANGELOG.md)
