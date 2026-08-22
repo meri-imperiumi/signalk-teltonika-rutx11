@@ -16,8 +16,12 @@ function getData(address, quantity, options) {
         address,
         quantity,
       }, (readErr, res) => {
+        // The RUTX11 only supports a limited number of concurrent
+        // Modbus TCP sessions, so always close the connection after
+        // a read to avoid exhausting them
+        connection.close();
         if (readErr) {
-          reject(readErr);
+          reject(new Error(`readHoldingRegisters ${address}/${quantity}: ${readErr.message}`));
           return;
         }
         resolve(res.response.data);
@@ -65,7 +69,7 @@ module.exports = function createPlugin(app) {
         ],
       });
     }
-    getData(1, 38, options)
+    getData(1, 22, options)
       .then((data) => {
         if (!data) {
           return Promise.resolve();
@@ -96,7 +100,7 @@ module.exports = function createPlugin(app) {
           path: 'networking.modem.temperature',
           value: modemTemperature,
         });
-        const operator = Buffer.concat(data.slice(22)).toString().replace(/\0.*$/g, '');
+        const operator = Buffer.concat(data.slice(6)).toString().replace(/\0.*$/g, '');
         values.push({
           path: 'networking.lte.registerNetworkDisplay',
           value: operator,

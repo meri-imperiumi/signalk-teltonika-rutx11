@@ -1,5 +1,15 @@
 # Changelog
 
+## [Unreleased]
+### Fixed
+- Adapt to the new Modbus register map in current RUTOS firmware: the
+  modem status read no longer includes registers that were removed,
+  and the operator name is read from its new location
+- Close the Modbus TCP connection after each read. Previously one
+  connection was leaked per poll, eventually exhausting the modem's
+  Modbus session limit
+- Include the failing register read in error messages
+
 ## [0.6.2] - 2026-06-16
 ### Added
 - Added icon for Signal K app store
