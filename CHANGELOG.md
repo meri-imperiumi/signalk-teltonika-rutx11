@@ -1,6 +1,6 @@
 # Changelog
 
-## [Unreleased]
+## [0.7.0] - 2026-08-22
 ### Fixed
 - Adapt to the new Modbus register map in current RUTOS firmware: the
   modem status read no longer includes registers that were removed
