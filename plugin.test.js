@@ -130,6 +130,7 @@ function buildRegisters(withService = true) {
 function createMockApp() {
   const state = {
     values: new Map(),
+    meta: new Map(),
     statuses: [],
     errors: [],
   };
@@ -137,6 +138,9 @@ function createMockApp() {
     selfId: 'self',
     handleMessage: (id, delta) => {
       (delta.updates || []).forEach((update) => {
+        (update.meta || []).forEach((m) => {
+          state.meta.set(m.path, m.value);
+        });
         (update.values || []).forEach((v) => {
           state.values.set(v.path, v.value);
         });
@@ -230,6 +234,34 @@ test('plugin publishes modem, WAN and GPS values', async (t) => {
   assert.equal(state.values.get('navigation.speedOverGround'), 0.5);
   assert.equal(state.values.get('navigation.gnss.satellites'), 12);
   assert.ok(Math.abs(state.values.get('navigation.gnss.horizontalDilution') - 0.6) < 0.0001);
+
+  // Meta is published for all custom paths, making them render nicely
+  // in Signal K consumers
+  const metaPaths = [
+    'networking.modem.uptime',
+    'networking.modem.temperature',
+    'networking.lte.rssi',
+    'networking.lte.bars',
+    'networking.lte.radioQuality',
+    'networking.lte.registerNetworkDisplay',
+    'networking.lte.connectionText',
+    'networking.wan.ip',
+    'networking.lte.usage.rx',
+    'networking.lte.usage.tx',
+    'navigation.gnss.satellites',
+    'navigation.gnss.horizontalDilution',
+  ];
+  metaPaths.forEach((path) => {
+    assert.ok(state.meta.has(path), `missing meta for ${path}`);
+  });
+  assert.equal(state.meta.get('networking.modem.temperature').units, 'K');
+  assert.equal(state.meta.get('networking.modem.uptime').units, 's');
+  assert.equal(state.meta.get('networking.lte.rssi').units, 'dBm');
+  assert.equal(state.meta.get('networking.lte.radioQuality').units, 'ratio');
+  assert.equal(state.meta.get('networking.lte.usage.rx').units, 'B');
+  const rssiZones = state.meta.get('networking.lte.rssi').zones;
+  assert.equal(rssiZones.length, 3);
+  assert.deepEqual(rssiZones.map((zone) => zone.state), ['alarm', 'warn', 'nominal']);
 
   assert.match(state.statuses.at(-1), /TestOperator/);
   assert.match(state.statuses.at(-1), /100\.75\.91\.205/);

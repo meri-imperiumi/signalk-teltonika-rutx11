@@ -54,7 +54,153 @@ module.exports = function createPlugin(app) {
       updates: [
         {
           meta: [
-            { path: 'networking.modem.temperature', value: { units: 'K' } },
+            {
+              path: 'networking.modem.uptime',
+              value: {
+                displayName: 'Modem uptime',
+                description: 'Time since the modem last rebooted',
+                units: 's',
+              },
+            },
+            {
+              path: 'networking.modem.temperature',
+              value: {
+                displayName: 'Modem temperature',
+                description: 'Internal temperature of the modem',
+                units: 'K',
+              },
+            },
+            {
+              path: 'networking.lte.rssi',
+              value: {
+                displayName: 'Signal strength',
+                description: 'Mobile network received signal strength',
+                units: 'dBm',
+                zones: [
+                  {
+                    state: 'alarm',
+                    upper: -110,
+                    message: 'No usable signal',
+                  },
+                  {
+                    state: 'warn',
+                    lower: -110,
+                    upper: -95,
+                    message: 'Weak signal',
+                  },
+                  {
+                    state: 'nominal',
+                    lower: -95,
+                    message: 'Good signal',
+                  },
+                ],
+              },
+            },
+            {
+              path: 'networking.lte.bars',
+              value: {
+                displayName: 'Signal bars',
+                description: 'Mobile network signal strength as bars, from 0 to 5',
+                zones: [
+                  {
+                    state: 'alarm',
+                    upper: 0,
+                    message: 'No service',
+                  },
+                  {
+                    state: 'warn',
+                    lower: 1,
+                    upper: 2,
+                    message: 'Weak signal',
+                  },
+                  {
+                    state: 'nominal',
+                    lower: 3,
+                    upper: 5,
+                    message: 'Good signal',
+                  },
+                ],
+              },
+            },
+            {
+              path: 'networking.lte.radioQuality',
+              value: {
+                displayName: 'Radio quality',
+                description: 'Mobile network signal quality, normalized from 0 to 1',
+                units: 'ratio',
+                zones: [
+                  {
+                    state: 'alarm',
+                    upper: 0.2,
+                    message: 'No service',
+                  },
+                  {
+                    state: 'warn',
+                    lower: 0.2,
+                    upper: 0.6,
+                    message: 'Weak signal',
+                  },
+                  {
+                    state: 'nominal',
+                    lower: 0.6,
+                    upper: 1,
+                    message: 'Good signal',
+                  },
+                ],
+              },
+            },
+            {
+              path: 'networking.lte.registerNetworkDisplay',
+              value: {
+                displayName: 'Network operator',
+                description: 'Name of the registered mobile network operator',
+              },
+            },
+            {
+              path: 'networking.lte.connectionText',
+              value: {
+                displayName: 'Connection type',
+                description: 'Mobile network technology in use, for example LTE',
+              },
+            },
+            {
+              path: 'networking.wan.ip',
+              value: {
+                displayName: 'WAN IP address',
+                description: 'IP address of the router WAN interface',
+              },
+            },
+            {
+              path: 'networking.lte.usage.rx',
+              value: {
+                displayName: 'Data received',
+                description: 'Mobile data received today on the active SIM',
+                units: 'B',
+              },
+            },
+            {
+              path: 'networking.lte.usage.tx',
+              value: {
+                displayName: 'Data transmitted',
+                description: 'Mobile data transmitted today on the active SIM',
+                units: 'B',
+              },
+            },
+            {
+              path: 'navigation.gnss.satellites',
+              value: {
+                displayName: 'Satellites',
+                description: 'Number of satellites used in the GNSS position fix',
+              },
+            },
+            {
+              path: 'navigation.gnss.horizontalDilution',
+              value: {
+                displayName: 'HDOP',
+                description: 'Horizontal dilution of precision of the GNSS fix',
+                units: 'ratio',
+              },
+            },
           ],
         },
       ],

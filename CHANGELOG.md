@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased]
+### Added
+- Publish Signal K meta (display names, descriptions, units, and signal
+  quality zones) for all paths the plugin provides, making them render
+  nicely in Signal K consumers
+
 ## [0.7.0] - 2026-08-22
 ### Fixed
 - Adapt to the new Modbus register map in current RUTOS firmware: the
