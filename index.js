@@ -41,7 +41,9 @@ module.exports = function createPlugin(app) {
   plugin.description = 'Plugin that retrieves status from a Teltonika RUT modem via Modbus';
 
   let timeout = null;
+  let stopped = false;
   plugin.start = function start(options) {
+    stopped = false;
     app.setPluginStatus('Initializing');
     plugin.setMeta();
     plugin.fetchStatus(options);
@@ -222,12 +224,15 @@ module.exports = function createPlugin(app) {
       app.setPluginError(err.message);
     }
 
-    timeout = setTimeout(() => {
-      plugin.fetchStatus(options);
-    }, options.interval * 1000);
+    if (!stopped) {
+      timeout = setTimeout(() => {
+        plugin.fetchStatus(options);
+      }, options.interval * 1000);
+    }
   };
 
   plugin.stop = function stop() {
+    stopped = true;
     if (timeout) {
       clearTimeout(timeout);
       timeout = null;

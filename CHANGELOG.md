@@ -14,8 +14,12 @@
   Modbus session limit
 - Include the failing register read in error messages
 - Optional register reads no longer abort the whole poll
+- Stopping the plugin now also prevents an in-flight poll from
+  scheduling further polls
 
 ### Added
+- Add a smoketest (node:test) running the plugin against an in-process
+  Modbus TCP mock, including the modem-out-of-service case
 - Publish the router WAN IP address as `networking.wan.ip`, making it
   possible to tell whether the router is uplinked via WAN (for example
   Starlink) or mobile data
