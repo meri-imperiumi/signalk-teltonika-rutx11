@@ -30,6 +30,10 @@ function getData(address, quantity, options) {
   });
 }
 
+function asciiValue(data) {
+  return Buffer.concat(data).toString().replace(/\0.*$/g, '');
+}
+
 module.exports = function createPlugin(app) {
   const plugin = {};
   plugin.id = 'signalk-teltonika-rutx11';
@@ -54,7 +58,7 @@ module.exports = function createPlugin(app) {
       ],
     });
   };
-  plugin.fetchStatus = function fetchStatus(options) {
+  plugin.fetchStatus = async function fetchStatus(options) {
     function sendValues(values) {
       app.handleMessage(plugin.id, {
         context: `vessels.${app.selfId}`,
@@ -69,148 +73,154 @@ module.exports = function createPlugin(app) {
         ],
       });
     }
-    getData(1, 22, options)
-      .then((data) => {
-        if (!data) {
-          return Promise.resolve();
-        }
-        const modemUptime = Buffer.concat(data.slice(0, 2)).readUInt32BE();
-        const values = [];
-        values.push({
-          path: 'networking.modem.uptime',
-          value: modemUptime,
-        });
-        const signalStrength = Buffer.concat(data.slice(2, 5)).readInt32BE();
-        values.push({
-          path: 'networking.lte.rssi',
-          value: signalStrength,
-        });
+
+    // Optional reads (for example the operator name when the modem has
+    // no service) must not abort the whole poll
+    async function safeGetData(address, quantity) {
+      try {
+        return await getData(address, quantity, options);
+      } catch (err) {
+        return null;
+      }
+    }
+
+    let signalStrength = null;
+    try {
+      const data = await getData(1, 22, options);
+      if (data) {
+        const buf = Buffer.concat(data);
+        const modemUptime = buf.readUInt32BE(0);
+        signalStrength = buf.readInt32BE(4);
+        const modemTemperature = buf.readInt32BE(8) / 10 + 273.15;
         const signalBars = Math.min(Math.floor((signalStrength + 100) / 8), 5);
-        values.push({
-          path: 'networking.lte.bars',
-          value: signalBars,
-        });
         const radioQuality = Math.min((signalStrength + 100) / 8, 5) / 5;
-        values.push({
-          path: 'networking.lte.radioQuality',
-          value: radioQuality,
-        });
-        const modemTemperature = Buffer.concat(data.slice(4, 7)).readInt32BE() / 10 + 273.15;
-        values.push({
-          path: 'networking.modem.temperature',
-          value: modemTemperature,
-        });
-        const operator = Buffer.concat(data.slice(6)).toString().replace(/\0.*$/g, '');
-        values.push({
-          path: 'networking.lte.registerNetworkDisplay',
-          value: operator,
-        });
-        app.setPluginStatus(`Connected to ${operator}, signal strength ${signalStrength}dBm`);
-        sendValues(values);
-        return getData(119, 16, options);
-      })
-      .then((data) => {
-        if (!data) {
-          return Promise.resolve();
+        sendValues([
+          { path: 'networking.modem.uptime', value: modemUptime },
+          { path: 'networking.lte.rssi', value: signalStrength },
+          { path: 'networking.lte.bars', value: signalBars },
+          { path: 'networking.lte.radioQuality', value: radioQuality },
+          { path: 'networking.modem.temperature', value: modemTemperature },
+        ]);
+      }
+
+      // GSM operator name (register 23). Unavailable while the modem
+      // is out of service, in which case the router returns an
+      // exception instead of data
+      const operatorData = await safeGetData(23, 16);
+      let operator = '';
+      if (operatorData) {
+        operator = asciiValue(operatorData);
+        if (operator) {
+          sendValues([
+            { path: 'networking.lte.registerNetworkDisplay', value: operator },
+          ]);
         }
-        const connectionType = Buffer.concat(data.slice(0, 15)).toString().replace(/\0.*$/g, '');
-        const values = [];
-        values.push({
-          path: 'networking.lte.connectionText',
-          value: connectionType,
-        });
-        sendValues(values);
-        return getData(87, 16, options);
-      })
-      .then((data) => {
-        if (!data) {
-          return Promise.resolve();
+      }
+
+      // WAN IP address (register 139, four 8 bit octets)
+      const wanData = await safeGetData(139, 2);
+      let wanIp = '';
+      if (wanData) {
+        wanIp = Array.from(Buffer.concat(wanData)).join('.');
+        if (wanIp !== '0.0.0.0') {
+          sendValues([
+            { path: 'networking.wan.ip', value: wanIp },
+          ]);
         }
-        const activeSim = Buffer.concat(data.slice(0, 15)).toString();
-        switch (activeSim.slice(0, 4)) {
-          case 'sim2': {
-            return getData(300, 4, options);
-          }
-          default: {
-            if (options.RUT240) {
-              return getData(135, 4, options);
-            }
-            return getData(185, 4, options);
-          }
+      }
+
+      // Network type (register 119)
+      const netData = await safeGetData(119, 16);
+      let networkType = '';
+      if (netData) {
+        networkType = asciiValue(netData);
+        if (networkType) {
+          sendValues([
+            { path: 'networking.lte.connectionText', value: networkType },
+          ]);
         }
-      })
-      .then((data) => {
-        if (!data) {
-          return Promise.resolve();
+      }
+
+      if (operator) {
+        app.setPluginStatus(`Mobile: ${operator} ${signalStrength}dBm, WAN IP ${wanIp}`);
+      } else {
+        app.setPluginStatus(`Mobile: ${networkType}, WAN IP ${wanIp}`);
+      }
+
+      // Active SIM card (register 87)
+      const simData = await safeGetData(87, 16);
+      let activeSim = '';
+      if (simData) {
+        activeSim = Buffer.concat(simData).toString();
+      }
+      let usageAddress;
+      switch (activeSim.slice(0, 4)) {
+        case 'sim2': {
+          usageAddress = 300;
+          break;
         }
-        const rx = Buffer.concat([data[0], data[1]]).readUInt32BE();
-        const tx = Buffer.concat([data[2], data[3]]).readUInt32BE();
-        const values = [];
-        values.push(
-          {
-            path: 'networking.lte.usage.tx',
-            value: tx,
-          },
-          {
-            path: 'networking.lte.usage.rx',
-            value: rx,
-          },
-        );
-        sendValues(values);
-        if (options.RUT240) {
-          return Promise.resolve();
+        default: {
+          usageAddress = options.RUT240 ? 135 : 185;
+          break;
         }
-        if (!options.enable_gps) {
-          return Promise.resolve();
+      }
+
+      // Mobile data usage for the active SIM
+      const usageData = await safeGetData(usageAddress, 4);
+      if (usageData) {
+        const usageBuf = Buffer.concat(usageData);
+        const rx = usageBuf.readUInt32BE(0);
+        const tx = usageBuf.readUInt32BE(4);
+        sendValues([
+          { path: 'networking.lte.usage.rx', value: rx },
+          { path: 'networking.lte.usage.tx', value: tx },
+        ]);
+      }
+
+      if (!options.RUT240 && options.enable_gps) {
+        // GPS position (registers 143-146)
+        const posData = await safeGetData(143, 4);
+        if (posData) {
+          const posBuf = Buffer.concat(posData);
+          const modemLat = options.GPSBE
+            ? posBuf.readFloatBE(0)
+            : posBuf.readFloatLE(0);
+          const modemLon = options.GPSBE
+            ? posBuf.readFloatBE(4)
+            : posBuf.readFloatLE(4);
+          sendValues([
+            {
+              path: 'navigation.position',
+              value: {
+                latitude: modemLat,
+                longitude: modemLon,
+              },
+            },
+          ]);
         }
-        return getData(143, 4, options);
-      })
-      .then((data) => {
-        if (!data) {
-          return Promise.resolve();
+
+        // GPS speed (register 179, float), satellites (register 181),
+        // accuracy/HDOP (register 183, float)
+        const gpsData = await safeGetData(179, 6);
+        if (gpsData) {
+          const gpsBuf = Buffer.concat(gpsData);
+          const modemSpeed = options.GPSBE
+            ? gpsBuf.readFloatBE(0)
+            : gpsBuf.readFloatLE(0);
+          const modemSats = gpsBuf.readUInt32BE(4);
+          const modemHdop = options.GPSBE
+            ? gpsBuf.readFloatBE(8)
+            : gpsBuf.readFloatLE(8);
+          sendValues([
+            { path: 'navigation.speedOverGround', value: modemSpeed },
+            { path: 'navigation.gnss.satellites', value: modemSats },
+            { path: 'navigation.gnss.horizontalDilution', value: modemHdop },
+          ]);
         }
-        const modemLat = options.GPSBE
-          ? Buffer.concat(data.slice(0, 2)).readFloatBE()
-          : Buffer.concat(data.slice(0, 2)).readFloatLE();
-        const modemLon = options.GPSBE
-          ? Buffer.concat(data.slice(2, 4)).readFloatBE()
-          : Buffer.concat(data.slice(2, 4)).readFloatLE();
-        const values = [];
-        values.push({
-          path: 'navigation.position',
-          value: {
-            latitude: modemLat,
-            longitude: modemLon,
-          },
-        });
-        sendValues(values);
-        return getData(179, 4, options);
-      })
-      .then((data) => {
-        if (!data) {
-          return Promise.resolve();
-        }
-        const modemSpeed = Buffer.concat(data.slice(0, 2)).readInt32BE();
-        const values = [];
-        values.push({
-          path: 'navigation.speedOverGround',
-          value: modemSpeed,
-        });
-        const modemSats = Buffer.concat(data.slice(2, 4)).readUInt32BE();
-        values.push({
-          path: 'navigation.gnss.satellites',
-          value: modemSats,
-        });
-        sendValues(values);
-        return Promise.resolve();
-      })
-      .catch((err) => {
-        if (!err) {
-          app.setPluginError('Unknown error');
-          return;
-        }
-        app.setPluginError(err.message);
-      });
+      }
+    } catch (err) {
+      app.setPluginError(err.message);
+    }
 
     timeout = setTimeout(() => {
       plugin.fetchStatus(options);

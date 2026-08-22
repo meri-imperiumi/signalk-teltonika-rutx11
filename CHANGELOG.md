@@ -3,12 +3,23 @@
 ## [Unreleased]
 ### Fixed
 - Adapt to the new Modbus register map in current RUTOS firmware: the
-  modem status read no longer includes registers that were removed,
-  and the operator name is read from its new location
+  modem status read no longer includes registers that were removed
+- Read the GSM operator name from its new register. It was previously
+  misread from the system hostname registers, and is now tolerated to
+  be unavailable while the modem has no service
+- GPS speed and accuracy are now decoded as 32 bit floats per the
+  current register map
 - Close the Modbus TCP connection after each read. Previously one
   connection was leaked per poll, eventually exhausting the modem's
   Modbus session limit
 - Include the failing register read in error messages
+- Optional register reads no longer abort the whole poll
+
+### Added
+- Publish the router WAN IP address as `networking.wan.ip`, making it
+  possible to tell whether the router is uplinked via WAN (for example
+  Starlink) or mobile data
+- Publish GPS accuracy as `navigation.gnss.horizontalDilution`
 
 ## [0.6.2] - 2026-06-16
 ### Added
