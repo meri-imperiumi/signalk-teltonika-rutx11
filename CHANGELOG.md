@@ -1,6 +1,6 @@
 # Changelog
 
-## [Unreleased]
+## [0.7.1] - 2026-08-22
 ### Added
 - Publish Signal K meta (display names, descriptions, units, and signal
   quality zones) for all paths the plugin provides, making them render
