@@ -259,9 +259,9 @@ test('plugin publishes modem, WAN and GPS values', async (t) => {
   assert.equal(state.meta.get('networking.lte.rssi').units, 'dBm');
   assert.equal(state.meta.get('networking.lte.radioQuality').units, 'ratio');
   assert.equal(state.meta.get('networking.lte.usage.rx').units, 'B');
-  const rssiZones = state.meta.get('networking.lte.rssi').zones;
-  assert.equal(rssiZones.length, 3);
-  assert.deepEqual(rssiZones.map((zone) => zone.state), ['alarm', 'warn', 'nominal']);
+  assert.equal(state.meta.get('networking.lte.rssi').zones, undefined);
+  assert.equal(state.meta.get('networking.lte.bars').zones, undefined);
+  assert.equal(state.meta.get('networking.lte.radioQuality').zones, undefined);
 
   assert.match(state.statuses.at(-1), /TestOperator/);
   assert.match(state.statuses.at(-1), /100\.75\.91\.205/);

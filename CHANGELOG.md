@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased]
+### Changed
+- Removed the alarm/warn/nominal zones from the meta deltas for signal
+  strength, signal bars, and radio quality. Consumers kept turning them
+  into notification spam
+
 ## [0.7.1] - 2026-08-22
 ### Added
 - Publish Signal K meta (display names, descriptions, units, and signal

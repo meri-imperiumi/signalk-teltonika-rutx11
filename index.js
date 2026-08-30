@@ -76,24 +76,6 @@ module.exports = function createPlugin(app) {
                 displayName: 'Signal strength',
                 description: 'Mobile network received signal strength',
                 units: 'dBm',
-                zones: [
-                  {
-                    state: 'alarm',
-                    upper: -110,
-                    message: 'No usable signal',
-                  },
-                  {
-                    state: 'warn',
-                    lower: -110,
-                    upper: -95,
-                    message: 'Weak signal',
-                  },
-                  {
-                    state: 'nominal',
-                    lower: -95,
-                    message: 'Good signal',
-                  },
-                ],
               },
             },
             {
@@ -101,25 +83,6 @@ module.exports = function createPlugin(app) {
               value: {
                 displayName: 'Signal bars',
                 description: 'Mobile network signal strength as bars, from 0 to 5',
-                zones: [
-                  {
-                    state: 'alarm',
-                    upper: 0,
-                    message: 'No service',
-                  },
-                  {
-                    state: 'warn',
-                    lower: 1,
-                    upper: 2,
-                    message: 'Weak signal',
-                  },
-                  {
-                    state: 'nominal',
-                    lower: 3,
-                    upper: 5,
-                    message: 'Good signal',
-                  },
-                ],
               },
             },
             {
@@ -128,25 +91,6 @@ module.exports = function createPlugin(app) {
                 displayName: 'Radio quality',
                 description: 'Mobile network signal quality, normalized from 0 to 1',
                 units: 'ratio',
-                zones: [
-                  {
-                    state: 'alarm',
-                    upper: 0.2,
-                    message: 'No service',
-                  },
-                  {
-                    state: 'warn',
-                    lower: 0.2,
-                    upper: 0.6,
-                    message: 'Weak signal',
-                  },
-                  {
-                    state: 'nominal',
-                    lower: 0.6,
-                    upper: 1,
-                    message: 'Good signal',
-                  },
-                ],
               },
             },
             {
