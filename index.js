@@ -176,64 +176,90 @@ module.exports = function createPlugin(app) {
       }
     }
 
-    let signalStrength = null;
     try {
-      const data = await getData(1, 22, options);
-      if (data) {
-        const buf = Buffer.concat(data);
-        const modemUptime = buf.readUInt32BE(0);
-        signalStrength = buf.readInt32BE(4);
-        const modemTemperature = buf.readInt32BE(8) / 10 + 273.15;
+      // System uptime (registers 1-2), always available. A failure
+      // here means the router is unreachable over Modbus, so the
+      // poll aborts and is reported as an error
+      const uptimeData = await getData(1, 2, options);
+      if (uptimeData) {
+        const modemUptime = Buffer.concat(uptimeData).readUInt32BE(0);
+        sendValues([
+          { path: 'networking.modem.uptime', value: modemUptime },
+        ]);
+      }
+
+      // Mobile signal strength (registers 3-4). Only served while the
+      // mobile connection is active: with no mobile link the router
+      // returns a Modbus exception instead of data
+      const signalData = await safeGetData(3, 2);
+      let signalStrength = null;
+      if (signalData) {
+        signalStrength = Buffer.concat(signalData).readInt32BE(0);
         const signalBars = Math.min(Math.floor((signalStrength + 100) / 8), 5);
         const radioQuality = Math.min((signalStrength + 100) / 8, 5) / 5;
         sendValues([
-          { path: 'networking.modem.uptime', value: modemUptime },
           { path: 'networking.lte.rssi', value: signalStrength },
           { path: 'networking.lte.bars', value: signalBars },
           { path: 'networking.lte.radioQuality', value: radioQuality },
+        ]);
+      } else {
+        // No mobile link: clear the signal paths so consumers do not
+        // keep serving the previous values as if they were live
+        sendValues([
+          { path: 'networking.lte.rssi', value: null },
+          { path: 'networking.lte.bars', value: null },
+          { path: 'networking.lte.radioQuality', value: null },
+        ]);
+      }
+
+      // System temperature (registers 5-6), always available
+      const tempData = await safeGetData(5, 2);
+      if (tempData) {
+        const modemTemperature = Buffer.concat(tempData).readInt32BE(0) / 10 + 273.15;
+        sendValues([
           { path: 'networking.modem.temperature', value: modemTemperature },
         ]);
       }
 
       // GSM operator name (register 23). Unavailable while the modem
-      // is out of service, in which case the router returns an
-      // exception instead of data
+      // has no mobile connection, in which case the router returns
+      // an exception instead of data
       const operatorData = await safeGetData(23, 16);
       let operator = '';
       if (operatorData) {
         operator = asciiValue(operatorData);
-        if (operator) {
-          sendValues([
-            { path: 'networking.lte.registerNetworkDisplay', value: operator },
-          ]);
-        }
       }
+      sendValues([
+        { path: 'networking.lte.registerNetworkDisplay', value: operator || null },
+      ]);
 
-      // WAN IP address (register 139, four 8 bit octets)
+      // WAN IP address (register 139, four 8 bit octets). Served as
+      // 0.0.0.0 (or an exception) while there is no WAN connection
       const wanData = await safeGetData(139, 2);
       let wanIp = '';
       if (wanData) {
         wanIp = Array.from(Buffer.concat(wanData)).join('.');
-        if (wanIp !== '0.0.0.0') {
-          sendValues([
-            { path: 'networking.wan.ip', value: wanIp },
-          ]);
-        }
       }
+      sendValues([
+        { path: 'networking.wan.ip', value: wanIp !== '0.0.0.0' ? wanIp : null },
+      ]);
 
       // Network type (register 119)
       const netData = await safeGetData(119, 16);
       let networkType = '';
       if (netData) {
         networkType = asciiValue(netData);
-        if (networkType) {
-          sendValues([
-            { path: 'networking.lte.connectionText', value: networkType },
-          ]);
-        }
       }
+      sendValues([
+        { path: 'networking.lte.connectionText', value: networkType || null },
+      ]);
 
-      if (operator) {
+      if (signalStrength === null) {
+        // The mobile-only registers failed: the router answers over
+        // Modbus, but there is no mobile connection
+        const wanStatus = wanIp !== '' && wanIp !== '0.0.0.0' ? `, WAN IP ${wanIp}` : '';
+        app.setPluginStatus(`Connected, no mobile link${wanStatus}`);
+      } else if (operator) {
         app.setPluginStatus(`Mobile: ${operator} ${signalStrength}dBm, WAN IP ${wanIp}`);
       } else {
         app.setPluginStatus(`Mobile: ${networkType}, WAN IP ${wanIp}`);
@@ -257,7 +283,8 @@ module.exports = function createPlugin(app) {
         }
       }
 
-      // Mobile data usage for the active SIM
+      // Mobile data usage for the active SIM. Unavailable without
+      // a mobile connection
       const usageData = await safeGetData(usageAddress, 4);
       if (usageData) {
         const usageBuf = Buffer.concat(usageData);
@@ -266,6 +293,11 @@ module.exports = function createPlugin(app) {
         sendValues([
           { path: 'networking.lte.usage.rx', value: rx },
           { path: 'networking.lte.usage.tx', value: tx },
+        ]);
+      } else {
+        sendValues([
+          { path: 'networking.lte.usage.rx', value: null },
+          { path: 'networking.lte.usage.tx', value: null },
         ]);
       }
 

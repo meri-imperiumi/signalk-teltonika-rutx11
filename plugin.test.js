@@ -92,11 +92,13 @@ function writeFloatBE(registers, address, value) {
   registers.set(address + 1, buf.readUInt16BE(2));
 }
 
-function buildRegisters(withService = true) {
+function buildRegisters({ withService = true, mobileSignal = true } = {}) {
   const registers = new Map();
   // System uptime, signal strength, temperature, hostname
   writeU32(registers, 1, 86400);
-  writeU32(registers, 3, -73 | 0);
+  if (mobileSignal) {
+    writeU32(registers, 3, -73 | 0);
+  }
   writeU32(registers, 5, 420);
   writeAscii(registers, 7, 16, 'Teltonika-RUTX11.com');
   if (withService) {
@@ -154,24 +156,32 @@ function createMockApp() {
     },
   };
 
+  // Resolves once the condition returns truthy
+  state.waitForCondition = (condition, label = 'condition') => new Promise((resolve, reject) => {
+    let timer = null;
+    const interval = setInterval(() => {
+      if (condition()) {
+        clearInterval(interval);
+        clearTimeout(timer);
+        resolve();
+      }
+    }, 25);
+    timer = setTimeout(() => {
+      clearInterval(interval);
+      reject(new Error(`Timed out waiting for ${label}`));
+    }, 5000);
+  });
+
   // Resolves when all the given paths have been received
   state.waitFor = (paths) => {
     const missing = () => paths.filter((p) => !state.values.has(p));
     if (missing().length === 0) {
       return Promise.resolve();
     }
-    return new Promise((resolve, reject) => {
-      const timeout = setTimeout(() => {
-        reject(new Error(`Timed out waiting for: ${missing().join(', ')}`));
-      }, 5000);
-      const interval = setInterval(() => {
-        if (missing().length === 0) {
-          clearInterval(interval);
-          clearTimeout(timeout);
-          resolve();
-        }
-      }, 25);
-    });
+    return state.waitForCondition(
+      () => missing().length === 0,
+      `: ${missing().join(', ')}`,
+    );
   };
   return { app, state };
 }
@@ -186,7 +196,7 @@ const baseOptions = (port) => ({
 });
 
 test('plugin publishes modem, WAN and GPS values', async (t) => {
-  const mock = await startModbusMock(buildRegisters(true));
+  const mock = await startModbusMock(buildRegisters());
   t.after(() => {
     mock.sockets.forEach((socket) => socket.destroy());
     mock.server.close();
@@ -277,7 +287,7 @@ test('plugin publishes modem, WAN and GPS values', async (t) => {
 test('plugin survives the modem having no service', async (t) => {
   // No operator registers: reads for them return exception code 4,
   // exactly like a RUTX11 whose SIM has no service
-  const mock = await startModbusMock(buildRegisters(false));
+  const mock = await startModbusMock(buildRegisters({ withService: false }));
   t.after(() => {
     mock.sockets.forEach((socket) => socket.destroy());
     mock.server.close();
@@ -301,8 +311,91 @@ test('plugin survives the modem having no service', async (t) => {
   await state.waitFor(expected);
 
   assert.deepEqual(state.errors, []);
-  assert.equal(state.values.get('networking.lte.registerNetworkDisplay'), undefined);
+  // The operator value is cleared rather than left missing
+  assert.equal(state.values.get('networking.lte.registerNetworkDisplay'), null);
   assert.equal(state.values.get('networking.wan.ip'), '100.75.91.205');
   assert.equal(state.values.get('networking.lte.connectionText'), 'No service');
   assert.match(state.statuses.at(-1), /No service/);
+});
+
+test('plugin keeps polling when there is no mobile link', async (t) => {
+  // Bench setup: no antenna, so the mobile-only registers (signal
+  // strength, GSM operator) return exception code 4 on every read,
+  // exactly like a RUT955 or RUTX11 without an active mobile link
+  const mock = await startModbusMock(buildRegisters({
+    withService: false,
+    mobileSignal: false,
+  }));
+  t.after(() => {
+    mock.sockets.forEach((socket) => socket.destroy());
+    mock.server.close();
+  });
+  const { app, state } = createMockApp();
+  const plugin = createPlugin(app);
+
+  const expected = [
+    'networking.modem.uptime',
+    'networking.modem.temperature',
+    'networking.wan.ip',
+    'networking.lte.connectionText',
+    'networking.lte.usage.rx',
+    'networking.lte.usage.tx',
+    'navigation.position',
+  ];
+
+  plugin.start(baseOptions(mock.port));
+  t.after(() => plugin.stop());
+
+  await state.waitFor(expected);
+
+  assert.deepEqual(state.errors, []);
+  assert.equal(state.values.get('networking.modem.uptime'), 86400);
+  assert.ok(Math.abs(state.values.get('networking.modem.temperature') - 315.15) < 0.01);
+  // Mobile-only paths are cleared instead of being left missing or stale
+  assert.equal(state.values.get('networking.lte.rssi'), null);
+  assert.equal(state.values.get('networking.lte.bars'), null);
+  assert.equal(state.values.get('networking.lte.radioQuality'), null);
+  assert.equal(state.values.get('networking.lte.registerNetworkDisplay'), null);
+  // Everything unrelated to mobile keeps working
+  assert.equal(state.values.get('networking.wan.ip'), '100.75.91.205');
+  assert.equal(state.values.get('networking.lte.usage.rx'), 123456);
+  assert.equal(state.values.get('networking.lte.usage.tx'), 654321);
+  assert.match(state.statuses.at(-1), /no mobile link/);
+});
+
+test('plugin clears stale mobile values when the link drops', async (t) => {
+  const registers = buildRegisters();
+  const mock = await startModbusMock(registers);
+  t.after(() => {
+    mock.sockets.forEach((socket) => socket.destroy());
+    mock.server.close();
+  });
+  const { app, state } = createMockApp();
+  const plugin = createPlugin(app);
+
+  plugin.start({ ...baseOptions(mock.port), interval: 1 });
+  t.after(() => plugin.stop());
+
+  await state.waitFor(['networking.lte.rssi', 'networking.lte.registerNetworkDisplay']);
+  assert.equal(state.values.get('networking.lte.rssi'), -73);
+  assert.equal(state.values.get('networking.lte.registerNetworkDisplay'), 'TestOperator');
+
+  // Mobile link drops: the mobile-only registers stop answering
+  [3, 4].forEach((address) => registers.delete(address));
+  for (let address = 23; address <= 38; address += 1) {
+    registers.delete(address);
+  }
+  for (let address = 185; address <= 188; address += 1) {
+    registers.delete(address);
+  }
+
+  await state.waitForCondition(() => state.values.get('networking.lte.rssi') === null
+    && state.values.get('networking.lte.registerNetworkDisplay') === null
+    && state.values.get('networking.lte.usage.rx') === null);
+
+  assert.deepEqual(state.errors, []);
+  assert.match(state.statuses.at(-1), /no mobile link/);
+  // Non-mobile values keep updating normally
+  assert.equal(state.values.get('networking.wan.ip'), '100.75.91.205');
+  assert.equal(state.values.get('networking.modem.uptime'), 86400);
 });

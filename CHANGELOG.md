@@ -1,5 +1,20 @@
 # Changelog
 
+## [Unreleased]
+### Fixed
+- Split the modem status Modbus read so that registers only served
+  while the mobile connection is active (signal strength, GSM
+  operator name) can no longer make the whole poll fail with
+  `ServerDeviceFailure` when there is no mobile link. Uptime and
+  temperature keep publishing on bench setups and ethernet-only
+  installs
+- Mobile-only values (signal strength, operator, connection type,
+  WAN IP, data usage) are cleared by publishing null when their
+  registers are unavailable, so consumers no longer keep serving
+  hours-old values as if they were live
+- Plugin status now reports "Connected, no mobile link" instead of a
+  raw Modbus error when the mobile-only registers fail
+
 ## [0.7.2] - 2026-08-29
 ### Changed
 - Removed the alarm/warn/nominal zones from the meta deltas for signal
