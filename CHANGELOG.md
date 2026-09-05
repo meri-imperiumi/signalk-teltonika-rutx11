@@ -1,6 +1,8 @@
 # Changelog
 
 ## [Unreleased]
+
+## [0.7.3] - 2026-09-05
 ### Fixed
 - Split the modem status Modbus read so that registers only served
   while the mobile connection is active (signal strength, GSM
