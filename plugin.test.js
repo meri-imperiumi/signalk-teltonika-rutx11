@@ -389,9 +389,15 @@ test('plugin clears stale mobile values when the link drops', async (t) => {
     registers.delete(address);
   }
 
+  // The deletion can land mid-poll: the poll that was in flight
+  // may clear usage while keeping the signal and operator values it
+  // read before the drop, so waiting for nulls alone can resolve
+  // before that poll's successor has reported the missing link.
+  // Wait for the status itself, as that is what gets asserted below
   await state.waitForCondition(() => state.values.get('networking.lte.rssi') === null
     && state.values.get('networking.lte.registerNetworkDisplay') === null
-    && state.values.get('networking.lte.usage.rx') === null);
+    && state.values.get('networking.lte.usage.rx') === null
+    && /no mobile link/.test(state.statuses.at(-1)));
 
   assert.deepEqual(state.errors, []);
   assert.match(state.statuses.at(-1), /no mobile link/);
