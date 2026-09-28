@@ -30,7 +30,7 @@
     "signalk-category-hardware"
   ],
   "signalk": {
-    "appIcon": "doc/appicon.png",
+    "appIcon": "doc/appicon-256.png",
     "displayName": "Teltonika RUT Modem Integration"
   }
 }
